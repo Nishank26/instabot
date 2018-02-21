@@ -198,13 +198,13 @@ def start_bot():
             self_info()
         elif choice == "b":
             insta_username = raw_input("Enter the username of the user:")
-            get_user_info('rajat8310')
+            get_user_info('insta_username')
 
         elif choice == "c":
             get_own_post()
         elif choice == "d":
             insta_username = raw_input("Enter the username of the user: ")
-            get_user_post('rajat8310')
+            get_user_post('insta_username')
         elif choice == "j":
             exit()
         else:
