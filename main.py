@@ -1,8 +1,10 @@
 import requests, urllib
+from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
 
 api_response = requests.get('https://jsonbin.io/b/59d0f30408be13271f7df29c').json()
-#APP_ACCESS_TOKEN = api_response['4870715640.a48e759.874aba351e5147eca8a9d36b9688f494']
-APP_ACCESS_TOKEN = api_response['128068475.b8ae6ad.891ec2bf276f4a11aa2c2f8475364900']
+APP_ACCESS_TOKEN = api_response['4870715640.a48e759.874aba351e5147eca8a9d36b9688f494']
+
 BASE_URL = 'https://api.instagram.com/v1/'
 
 '''
@@ -11,7 +13,7 @@ To get your own info
 
 
 def self_info():
-    request_url = (BASE_URL + 'users/self/?access_token=%s') % (APP_ACCESS_TOKEN)
+    request_url = (BASE_URL + 'users/self/?access_token=%s') % APP_ACCESS_TOKEN
     print 'GET request url : %s' % (request_url)
     user_info = requests.get(request_url).json()
 
@@ -122,6 +124,64 @@ def get_user_post(insta_username):
     #/////////////////////////////////////////////////////#
 
 
+def post_a_comment(insta_username):
+    media_id = get_user_post(insta_username)
+    comment_text = raw_input("Your comment: ")
+    payload = {"access_token": APP_ACCESS_TOKEN, "text": comment_text}
+    request_url = (BASE_URL + 'media/%s/comments') % (media_id)
+    print 'POST request url : %s' % (request_url)
+    make_comment = requests.post(request_url, payload).json()
+    if make_comment['meta']['code'] == 200:
+        print "Successfully added a new comment!"
+    else:
+        print "Unable to add comment. Try again!"
+
+
+def like_a_post(insta_username):
+    media_id = get_user_post(insta_username)
+    request_url = (BASE_URL + 'media/%s/likes') % (media_id)
+    payload = {"access_token": APP_ACCESS_TOKEN}
+    print 'POST request url : %s' % (request_url)
+    post_a_like = requests.post(request_url, payload).json()
+    if post_a_like['meta']['code'] == 200:
+        print 'Like was successful!'
+    else:
+        print 'Your like was unsuccessful. Try again!'
+
+
+def delete_negative_comment(insta_username):
+    media_id = get_user_post(insta_username)
+    request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, APP_ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    comment_info = requests.get(request_url).json()
+
+    if comment_info['meta']['code'] == 200:
+             # Check if we have comments on the post
+		if len(comment_info['data']) > 0:
+
+                 for comment in comment_info['data']:
+                   comment_text = comment['text']
+                   blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
+
+                   if blob.sentiment.p_neg > blob.sentiment.p_pos:
+                       comment_id = comment['id']
+                       delete_url = (BASE_URL + 'media/%s/comments/%s/?access_token=%s') % (
+                           media_id, comment_id, APP_ACCESS_TOKEN)
+                       print 'DELETE request url : %s' % (delete_url)
+                       delete_info = requests.delete(delete_url).json()
+
+                       if delete_info['meta']['code'] == 200:
+                             print 'Comment successfully deleted!'
+                       else:
+                             print 'Could not delete the comment'
+
+
+        else:
+            print 'No comments found'
+
+    else:
+         print 'Status code other than 200 received!'
+
 def start_bot():
     while True:
         print '\n'
@@ -138,13 +198,13 @@ def start_bot():
             self_info()
         elif choice == "b":
             insta_username = raw_input("Enter the username of the user:")
-            get_user_info('Er.Nishank_kumar')
+            get_user_info('rajat8310')
 
         elif choice == "c":
             get_own_post()
         elif choice == "d":
             insta_username = raw_input("Enter the username of the user: ")
-            get_user_post('Er.Nishank_kumar')
+            get_user_post('rajat8310')
         elif choice == "j":
             exit()
         else:
